@@ -162,7 +162,7 @@
 
   <div class="tabs">
     <button class="tab active" data-tab="prospects" onclick="showTab('prospects')">📋 Prospects<span class="count-pill" id="count-prospects">0</span></button>
-    <button class="tab" data-tab="today" onclick="showTab('today')">⏰ À relancer<span class="count-pill" id="count-today">0</span></button>
+    <button class="tab" data-tab="today" onclick="showTab('today')">📤 File d'attente<span class="count-pill" id="count-today">0</span></button>
     <button class="tab" data-tab="templates" onclick="showTab('templates')">✉️ Templates<span class="count-pill" id="count-templates">0</span></button>
     <button class="tab" data-tab="flows" onclick="showTab('flows')">🔁 Flows<span class="count-pill" id="count-flows">0</span></button>
   </div>
@@ -186,13 +186,20 @@
     </div>
   </div>
 
-  <!-- ============ TODAY / À RELANCER ============ -->
+  <!-- ============ FILE D'ATTENTE (ENVOI VIA RESEND) ============ -->
   <div id="tab-today" class="section">
     <div class="card">
       <div class="card-title">
-        <div class="left"><div class="icon">⏰</div> Relances à envoyer</div>
+        <div class="left"><div class="icon">📤</div> File d'attente — emails à valider</div>
+        <button class="btn" onclick="refreshQueueFromServer()">↻ Rafraîchir</button>
       </div>
-      <p class="helper" style="margin-bottom:14px;">Basé sur la date de démarrage du flow et le nombre de jours écoulés. Copiez le message et envoyez-le via votre messagerie, puis marquez-le comme envoyé.</p>
+      <p class="helper" style="margin-bottom:14px;">Calculée automatiquement chaque jour selon les flows assignés. Relisez, sélectionnez, puis envoyez via Resend — rien ne part sans votre validation.</p>
+      <div class="filter-bar" id="queue-actions" style="display:none;">
+        <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; margin:0;">
+          <input type="checkbox" id="queue-select-all" style="width:auto;" onchange="toggleSelectAllQueue()"> Tout sélectionner
+        </label>
+        <button class="btn btn-primary" onclick="sendSelectedQueue()">✉️ Envoyer la sélection</button>
+      </div>
       <div id="today-list"></div>
     </div>
   </div>
@@ -323,6 +330,7 @@ let prospects = [];
 let templates = [];
 let flows = [];
 let flowModalSteps = []; // working state while editing a flow in modal
+let currentQueue = [];
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function todayISO() { return new Date().toISOString().slice(0,10); }
@@ -398,6 +406,15 @@ async function apiPut(path, data) {
   if (!res.ok) throw new Error('PUT ' + path + ' failed: ' + res.status);
   return res.json();
 }
+async function apiPost(path, data) {
+  const res = await fetch(`${API_CONFIG.apiBase}/api/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_CONFIG.apiKey },
+    body: JSON.stringify(data || {}),
+  });
+  if (!res.ok) throw new Error('POST ' + path + ' failed: ' + res.status);
+  return res.json();
+}
 
 async function loadAll() {
   try {
@@ -430,14 +447,14 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   document.querySelector('.tab[data-tab="' + name + '"]').classList.add('active');
-  if (name === 'today') renderToday();
+  if (name === 'today') fetchQueueDisplay();
 }
 
 function updateCounts() {
   document.getElementById('count-prospects').textContent = prospects.length;
   document.getElementById('count-templates').textContent = templates.length;
   document.getElementById('count-flows').textContent = flows.length;
-  document.getElementById('count-today').textContent = computeDueList().length;
+  document.getElementById('count-today').textContent = currentQueue.length;
 }
 
 // ---------- STATUS SELECT HELPERS ----------
@@ -765,41 +782,11 @@ async function deleteFlow(id) {
   showToast('✓ Flow supprimé');
 }
 
-// ---------- TODAY / DUE LIST ----------
+// ---------- FILE D'ATTENTE (serveur) ----------
 function fillTemplate(str, prospect) {
   return (str || '')
     .replace(/\{\{\s*nom\s*\}\}/gi, prospect.nom || '')
     .replace(/\{\{\s*entreprise\s*\}\}/gi, prospect.entreprise || '');
-}
-function computeDueList() {
-  const today = todayISO();
-  const result = [];
-  const activeStatuses = ['a_contacter', 'contacte', 'interesse', 'injoignable'];
-  for (const p of prospects) {
-    if (!p.flowId) continue;
-    if (!activeStatuses.includes(p.statut)) continue; // stop sequence for rdv_fixe / pas_interesse
-    const flow = flows.find(f => f.id === p.flowId);
-    if (!flow) continue;
-    const startDate = p.flowStartDate || todayISO();
-    const elapsed = daysBetween(startDate, today);
-    const sentDays = (p.sentSteps || []).map(s => s.jour);
-    const sortedSteps = flow.steps.slice().sort((a,b)=>a.jour-b.jour);
-    for (const step of sortedSteps) {
-      if (sentDays.includes(step.jour)) continue;
-      if (elapsed >= step.jour) {
-        result.push({
-          prospect: p,
-          flow,
-          step,
-          overdue: elapsed > step.jour,
-          elapsed,
-        });
-        break; // only the next pending step per prospect
-      }
-    }
-  }
-  result.sort((a,b) => b.elapsed - a.elapsed);
-  return result;
 }
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
@@ -808,77 +795,91 @@ function copyToClipboard(text) {
     showToast('⚠️ Impossible de copier automatiquement');
   });
 }
-function copyRichEmail(subj, htmlBody, plainFallback) {
-  const plainAll = subj + '\n\n' + plainFallback;
-  if (navigator.clipboard && window.ClipboardItem) {
-    const htmlBlob = new Blob([htmlBody], { type: 'text/html' });
-    const textBlob = new Blob([plainAll], { type: 'text/plain' });
-    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })]).then(() => {
-      showToast('✓ Copié (mise en forme conservée) — collez dans votre email');
-    }).catch(() => copyToClipboard(plainAll));
-  } else {
-    copyToClipboard(plainAll);
-  }
-}
-async function markStepSent(prospectId, jour) {
-  const p = prospects.find(p => p.id === prospectId);
-  if (!p) return;
-  p.sentSteps = p.sentSteps || [];
-  p.sentSteps.push({ jour, date: todayISO() });
-  await saveProspects();
-  renderToday();
-  renderProspects();
-  showToast('✓ Marqué comme envoyé');
-}
-function renderToday() {
+
+async function fetchQueueDisplay() {
   const wrap = document.getElementById('today-list');
-  const due = computeDueList();
-  updateCounts();
-  if (due.length === 0) {
-    wrap.innerHTML = `<div class="empty-state"><div class="big">✅</div>Rien à relancer aujourd'hui. Beau travail !</div>`;
+  wrap.innerHTML = `<div class="empty-state">Chargement de la file…</div>`;
+  try {
+    currentQueue = await apiGet('queue');
+  } catch (e) {
+    wrap.innerHTML = `<div class="empty-state">⚠️ Impossible de charger la file d'attente.</div>`;
     return;
   }
+  updateCounts();
+  renderQueue();
+}
+async function refreshQueueFromServer() {
+  showToast('Calcul en cours…');
+  try {
+    currentQueue = await apiPost('queue/refresh');
+  } catch (e) {
+    showToast('⚠️ Erreur lors du calcul de la file');
+    return;
+  }
+  updateCounts();
+  renderQueue();
+  showToast('✓ File d\'attente à jour');
+}
+function toggleSelectAllQueue() {
+  const checked = document.getElementById('queue-select-all').checked;
+  document.querySelectorAll('.queue-item-checkbox').forEach(cb => { cb.checked = checked; });
+}
+async function sendSelectedQueue() {
+  const ids = Array.from(document.querySelectorAll('.queue-item-checkbox:checked')).map(cb => cb.dataset.id);
+  if (ids.length === 0) { showToast('⚠️ Sélectionnez au moins un email'); return; }
+  if (!confirm(`Envoyer ${ids.length} email(s) maintenant ?`)) return;
+  showToast('Envoi en cours…');
+  try {
+    const res = await apiPost('queue/send', { ids });
+    currentQueue = res.queue || [];
+    const failed = (res.results || []).filter(r => !r.ok);
+    if (failed.length > 0) {
+      showToast(`⚠️ ${failed.length} envoi(s) ont échoué`);
+    } else {
+      showToast('✓ Emails envoyés');
+    }
+  } catch (e) {
+    showToast('⚠️ Erreur lors de l\'envoi');
+  }
+  await loadAll(); // refresh prospects (sentSteps updated server-side)
+  renderProspects();
+  updateCounts();
+  renderQueue();
+}
+function renderQueue() {
+  const wrap = document.getElementById('today-list');
+  const actionsBar = document.getElementById('queue-actions');
+  if (currentQueue.length === 0) {
+    actionsBar.style.display = 'none';
+    wrap.innerHTML = `<div class="empty-state"><div class="big">✅</div>Rien en attente pour le moment.</div>`;
+    return;
+  }
+  actionsBar.style.display = 'flex';
+  document.getElementById('queue-select-all').checked = false;
   let html = '';
-  for (const d of due) {
-    const t = templates.find(t => t.id === d.step.templateId);
-    const subj = t ? fillTemplate(t.sujet, d.prospect) : '(template supprimé)';
-    const corps = t ? fillTemplate(t.corps, d.prospect) : '';
-    const isHtml = t && t.isHtml;
-    const cardId = 'due-' + d.prospect.id + '-' + d.step.jour;
-    html += `<div class="due-card ${d.overdue ? 'overdue' : ''}">
+  for (const item of currentQueue) {
+    html += `<div class="due-card">
       <div class="head">
-        <div>
-          <div class="prospect-name">${escapeHtml(d.prospect.nom)} — ${escapeHtml(d.prospect.entreprise)}</div>
-          <div class="meta">Étape J+${d.step.jour} · ${d.elapsed} jour(s) écoulé(s) depuis le démarrage du flow "${escapeHtml(d.flow.nom)}"${d.overdue ? ' · <span style="color:var(--danger)">en retard</span>' : ''}</div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <input type="checkbox" class="queue-item-checkbox" data-id="${item.id}" style="margin-top:4px;" ${item.missingEmail ? 'disabled' : ''}>
+          <div>
+            <div class="prospect-name">${escapeHtml(item.prospectNom)} — ${escapeHtml(item.prospectEntreprise)}</div>
+            <div class="meta">Étape J+${item.jour} · flow "${escapeHtml(item.flowNom)}"${item.missingEmail ? ' · <span style="color:var(--danger)">email manquant, impossible à envoyer</span>' : ' · ' + escapeHtml(item.prospectEmail)}</div>
+          </div>
         </div>
         <div class="row-actions">
-          <button class="btn btn-sm" id="${cardId}-copybtn">📋 Copier</button>
-          <button class="btn btn-sm btn-primary" onclick="markStepSent('${d.prospect.id}', ${d.step.jour})">✓ Marquer envoyé</button>
+          <button class="btn btn-sm" onclick='copyToClipboard(${JSON.stringify(item.subject + '\\n\\n' + item.corps)})'>📋 Copier</button>
         </div>
       </div>
       <div class="email-preview">
-        <div class="subj">${escapeHtml(subj)}</div>
-        ${isHtml
-          ? `<iframe id="${cardId}-frame" style="width:100%; height:140px; border:1px solid var(--border); border-radius:6px; background:#fff; margin-top:6px;" sandbox="" srcdoc="${escapeHtml(corps)}"></iframe>`
-          : `<div class="corps">${escapeHtml(corps)}</div>`}
+        <div class="subj">${escapeHtml(item.subject)}</div>
+        ${item.isHtml
+          ? `<iframe style="width:100%; height:140px; border:1px solid var(--border); border-radius:6px; background:#fff; margin-top:6px;" sandbox="" srcdoc="${escapeHtml(item.corps)}"></iframe>`
+          : `<div class="corps">${escapeHtml(item.corps)}</div>`}
       </div>
     </div>`;
   }
   wrap.innerHTML = html;
-  // wire up copy buttons (avoids fragile inline-JSON-in-onclick for HTML content)
-  for (const d of due) {
-    const t = templates.find(t => t.id === d.step.templateId);
-    const subj = t ? fillTemplate(t.sujet, d.prospect) : '';
-    const corps = t ? fillTemplate(t.corps, d.prospect) : '';
-    const cardId = 'due-' + d.prospect.id + '-' + d.step.jour;
-    const btn = document.getElementById(cardId + '-copybtn');
-    if (!btn) continue;
-    if (t && t.isHtml) {
-      btn.onclick = () => copyRichEmail(subj, corps, corps.replace(/<[^>]+>/g, ' '));
-    } else {
-      btn.onclick = () => copyToClipboard(subj + '\n\n' + corps);
-    }
-  }
 }
 
 // ---------- MODAL HELPERS ----------
@@ -908,7 +909,7 @@ async function init(skipConfigCheck) {
   renderProspects();
   renderTemplates();
   renderFlows();
-  renderToday();
+  try { currentQueue = await apiGet('queue'); } catch (e) { currentQueue = []; }
   updateCounts();
   document.getElementById('loading-msg').style.display = 'none';
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
