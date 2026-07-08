@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nevia — Prospects &amp; Relances</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap');
+
+  :root {
+    --bg: #0d0f13;
+    --surface: #13161d;
+    --surface2: #1a1e28;
+    --surface3: #20242f;
+    --border: #252a36;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12);
+    --accent-mid: rgba(74,222,128,0.25);
+    --warn: #f59e0b;
+    --warn-dim: rgba(245,158,11,0.12);
+    --danger: #f87171;
+    --danger-dim: rgba(248,113,113,0.1);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --text: #e8eaf0;
+    --muted: #7c8499;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .tagline { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .badge { background: var(--accent-dim); border: 1px solid var(--accent-mid); color: var(--accent); font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.05em; }
+
+  .container { max-width: 1080px; margin: 0 auto; padding: 28px 22px 80px; }
+
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px; margin-bottom: 22px; flex-wrap: wrap; }
+  .tab { flex: 1; min-width: 130px; padding: 10px 14px; border-radius: 8px; border: none; background: transparent; color: var(--muted); font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all .15s; text-align: center; letter-spacing: .02em; }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { background: var(--accent); color: #0d0f13; }
+  .count-pill { display:inline-block; background: rgba(0,0,0,.2); border-radius: 20px; padding: 0 7px; font-size: 10.5px; margin-left: 5px; }
+  .tab.active .count-pill { background: rgba(0,0,0,.22); }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+  .card-title .left { display:flex; align-items:center; gap:10px; }
+  .card-title .icon { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-dim); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+
+  .btn { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 9px 16px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; transition: all .15s; }
+  .btn:hover { border-color: var(--accent-mid); }
+  .btn-primary { background: var(--accent); color: #0d0f13; border-color: var(--accent); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-danger { background: transparent; color: var(--danger); border-color: rgba(248,113,113,.3); }
+  .btn-danger:hover { background: var(--danger-dim); }
+  .btn-sm { padding: 5px 10px; font-size: 11.5px; }
+  .btn-ghost { background: transparent; }
+
+  label { display:block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=email], input[type=tel], input[type=date], input[type=number], textarea, select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 13.5px; outline: none; transition: border-color .15s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent-mid); }
+  textarea { resize: vertical; min-height: 90px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .form-row-full { grid-column: 1 / -1; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700; }
+  td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.015); }
+
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+  .empty-state .big { font-size: 30px; margin-bottom: 10px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; max-width: 560px; width: 100%; max-height: 88vh; overflow-y: auto; }
+  .modal h3 { font-family: 'Syne', sans-serif; font-size: 16px; margin-bottom: 4px; }
+  .modal .sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  .flow-step { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .flow-step .day-badge { background: var(--blue-dim); color: var(--blue); font-weight: 700; font-size: 12px; border-radius: 6px; padding: 4px 9px; flex-shrink: 0; min-width: 60px; text-align: center; }
+  .flow-step select { flex: 1; }
+  .flow-step .remove-step { flex-shrink: 0; color: var(--danger); cursor: pointer; font-size: 16px; background: none; border: none; padding: 4px 8px; }
+
+  .tpl-card, .flow-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; }
+  .tpl-card .head, .flow-card .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .tpl-card .name, .flow-card .name { font-weight: 700; font-size: 14px; }
+  .tpl-card .subject { color: var(--muted); font-size: 12.5px; margin-bottom: 6px; }
+  .tpl-card .body-preview { color: var(--muted); font-size: 12px; white-space: pre-wrap; max-height: 60px; overflow: hidden; }
+  .row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .flow-steps-mini { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .mini-step { background: var(--surface3); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--muted); }
+  .mini-step b { color: var(--accent); }
+
+  .due-card { background: var(--surface2); border: 1px solid var(--accent-mid); border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; }
+  .due-card.overdue { border-color: rgba(248,113,113,.4); }
+  .due-card .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+  .due-card .prospect-name { font-weight: 700; font-size: 14.5px; }
+  .due-card .meta { font-size: 12px; color: var(--muted); }
+  .email-preview { background: var(--surface3); border-radius: 8px; padding: 12px 14px; margin-top: 8px; font-size: 12.5px; }
+  .email-preview .subj { font-weight: 600; margin-bottom: 6px; }
+  .email-preview .corps { color: var(--muted); white-space: pre-wrap; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #0d0f13; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-bar select { width: auto; min-width: 160px; }
+  .search-input { flex: 1; min-width: 180px; }
+
+  .helper { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .loading { text-align: center; padding: 30px; color: var(--muted); font-size: 13px; }
+  .var-tag { display:inline-block; background: var(--surface3); border-radius: 5px; padding: 1px 6px; font-size: 11px; color: var(--accent); font-family: monospace; margin: 0 2px; }
+
+  @media (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr; }
+    header { padding: 14px 16px; }
+    .container { padding: 18px 14px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">NEVIA<span>.</span></div>
+    <div class="tagline">Prospects &amp; relances — outil apporteur d'affaires</div>
+  </div>
+  <div class="badge" style="cursor:pointer;" onclick="openSettingsModal()">⚙️ Connexion API</div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab active" data-tab="prospects" onclick="showTab('prospects')">📋 Prospects<span class="count-pill" id="count-prospects">0</span></button>
+    <button class="tab" data-tab="today" onclick="showTab('today')">⏰ À relancer<span class="count-pill" id="count-today">0</span></button>
+    <button class="tab" data-tab="templates" onclick="showTab('templates')">✉️ Templates<span class="count-pill" id="count-templates">0</span></button>
+    <button class="tab" data-tab="flows" onclick="showTab('flows')">🔁 Flows<span class="count-pill" id="count-flows">0</span></button>
+  </div>
+
+  <div id="loading-msg" class="loading">Chargement des données…</div>
+
+  <!-- ============ PROSPECTS ============ -->
+  <div id="tab-prospects" class="section">
+    <div class="card">
+      <div class="card-title">
+        <div class="left"><div class="icon">📋</div> Prospects</div>
+        <button class="btn btn-primary" onclick="openProspectModal()">+ Ajouter un prospect</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" class="search-input" id="prospect-search" placeholder="Rechercher (nom, entreprise, email)…" oninput="renderProspects()">
+        <select id="prospect-filter-status" onchange="renderProspects()">
+          <option value="">Tous les statuts</option>
+        </select>
+      </div>
+      <div id="prospects-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ============ TODAY / À RELANCER ============ -->
+  <div id="tab-today" class="section">
+    <div class="card">
+      <div class="card-title">
+        <div class="left"><div class="icon">⏰</div> Relances à envoyer</div>
+      </div>
+      <p class="helper" style="margin-bottom:14px;">Basé sur la date de démarrage du flow et le nombre de jours écoulés. Copiez le message et envoyez-le via votre messagerie, puis marquez-le comme envoyé.</p>
+      <div id="today-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ TEMPLATES ============ -->
+  <div id="tab-templates" class="section">
+    <div class="card">
+      <div class="card-title">
+        <div class="left"><div class="icon">✉️</div> Templates d'email</div>
+        <button class="btn btn-primary" onclick="openTemplateModal()">+ Nouveau template</button>
+      </div>
+      <p class="helper" style="margin-bottom:14px;">Variables disponibles : <span class="var-tag">{{nom}}</span><span class="var-tag">{{entreprise}}</span></p>
+      <div id="templates-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ FLOWS ============ -->
+  <div id="tab-flows" class="section">
+    <div class="card">
+      <div class="card-title">
+        <div class="left"><div class="icon">🔁</div> Flows de relance</div>
+        <button class="btn btn-primary" onclick="openFlowModal()">+ Nouveau flow</button>
+      </div>
+      <p class="helper" style="margin-bottom:14px;">Un flow est une séquence de templates envoyés à J+0, J+3, J+7… Créez d'abord vos templates.</p>
+      <div id="flows-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PROSPECT MODAL -->
+<div class="modal-overlay" id="prospect-modal">
+  <div class="modal">
+    <h3 id="prospect-modal-title">Ajouter un prospect</h3>
+    <div class="sub">Renseignez les informations et, si besoin, assignez un flow de relance.</div>
+    <input type="hidden" id="prospect-id">
+    <div class="form-grid">
+      <div><label>Nom</label><input type="text" id="prospect-nom" placeholder="Jean Dupont"></div>
+      <div><label>Entreprise</label><input type="text" id="prospect-entreprise" placeholder="Acme SAS"></div>
+      <div><label>Email</label><input type="email" id="prospect-email" placeholder="jean@acme.fr"></div>
+      <div><label>Téléphone</label><input type="tel" id="prospect-telephone" placeholder="06 12 34 56 78"></div>
+      <div><label>Statut</label><select id="prospect-statut"></select></div>
+      <div><label>Flow assigné</label><select id="prospect-flow"><option value="">— Aucun —</option></select></div>
+      <div><label>Date de démarrage du flow</label><input type="date" id="prospect-flow-date"></div>
+      <div class="form-row-full"><label>Notes</label><textarea id="prospect-notes" placeholder="Contexte, remarques…"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('prospect-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveProspect()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEMPLATE MODAL -->
+<div class="modal-overlay" id="template-modal">
+  <div class="modal">
+    <h3 id="template-modal-title">Nouveau template</h3>
+    <div class="sub">Utilisez <span class="var-tag">{{nom}}</span> et <span class="var-tag">{{entreprise}}</span> dans le sujet ou le corps.</div>
+    <input type="hidden" id="template-id">
+    <label>Nom du template (usage interne)</label>
+    <input type="text" id="template-nom" placeholder="Relance J+3 - premier contact">
+    <label>Sujet de l'email</label>
+    <input type="text" id="template-sujet" placeholder="Suite à notre échange, {{nom}}">
+    <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">
+      <input type="checkbox" id="template-is-html" style="width:auto;" onchange="toggleTemplateContentMode()"> Contenu HTML (mise en forme, liens, etc.)
+    </label>
+    <label id="template-corps-label">Corps de l'email</label>
+    <textarea id="template-corps" style="min-height:180px; font-family:inherit;" placeholder="Bonjour {{nom}},&#10;&#10;Je me permets de revenir vers vous concernant..." oninput="refreshTemplatePreview()"></textarea>
+    <div id="template-preview-wrap" style="display:none; margin-top:10px;">
+      <label style="margin-top:0;">Aperçu</label>
+      <iframe id="template-html-preview" style="width:100%; height:180px; border:1px solid var(--border); border-radius:8px; background:#fff;" sandbox=""></iframe>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('template-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveTemplate()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLOW MODAL -->
+<div class="modal-overlay" id="flow-modal">
+  <div class="modal">
+    <h3 id="flow-modal-title">Nouveau flow</h3>
+    <div class="sub">Ajoutez des étapes : à J+X jours après le démarrage, quel template envoyer.</div>
+    <input type="hidden" id="flow-id">
+    <label>Nom du flow</label>
+    <input type="text" id="flow-nom" placeholder="Relance standard prospect froid">
+    <label>Étapes</label>
+    <div id="flow-steps-container"></div>
+    <button class="btn btn-sm" style="margin-top:6px;" onclick="addFlowStep()">+ Ajouter une étape</button>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('flow-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveFlow()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h3>Connexion à l'API</h3>
+    <div class="sub">Renseignez l'URL de votre Worker Cloudflare et la clé d'accès. Ces informations restent stockées uniquement dans ce navigateur.</div>
+    <label>URL du Worker</label>
+    <input type="text" id="settings-api-base" placeholder="https://nevia-relance-api.votre-compte.workers.dev">
+    <label>Clé API (X-API-Key)</label>
+    <input type="text" id="settings-api-key" placeholder="votre clé secrète">
+    <div class="helper" id="settings-error" style="color:var(--danger); margin-top:10px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="settings-cancel-btn" onclick="closeModal('settings-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Se connecter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUSES = [
+  { id: 'a_contacter', label: 'À contacter', color: '#7c8499' },
+  { id: 'contacte', label: 'Contacté - en attente', color: '#60a5fa' },
+  { id: 'interesse', label: 'Intéressé', color: '#4ade80' },
+  { id: 'rdv_fixe', label: 'RDV fixé', color: '#4ade80' },
+  { id: 'injoignable', label: 'Injoignable', color: '#f59e0b' },
+  { id: 'pas_interesse', label: 'Pas intéressé', color: '#f87171' },
+];
+
+let prospects = [];
+let templates = [];
+let flows = [];
+let flowModalSteps = []; // working state while editing a flow in modal
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function daysBetween(dateStr, todayStr) {
+  const a = new Date(dateStr + 'T00:00:00');
+  const b = new Date(todayStr + 'T00:00:00');
+  return Math.floor((b - a) / 86400000);
+}
+function escapeHtml(str) {
+  return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ---------- API CONFIG ----------
+const CONFIG_KEY = 'nevia_api_config';
+let API_CONFIG = null;
+
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY);
+    API_CONFIG = raw ? JSON.parse(raw) : null;
+  } catch (e) { API_CONFIG = null; }
+}
+function storeConfig(apiBase, apiKey) {
+  API_CONFIG = { apiBase: apiBase.replace(/\/+$/, ''), apiKey };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(API_CONFIG));
+}
+function openSettingsModal() {
+  document.getElementById('settings-api-base').value = API_CONFIG ? API_CONFIG.apiBase : '';
+  document.getElementById('settings-api-key').value = API_CONFIG ? API_CONFIG.apiKey : '';
+  document.getElementById('settings-error').textContent = '';
+  document.getElementById('settings-cancel-btn').style.display = API_CONFIG ? 'inline-block' : 'none';
+  document.getElementById('settings-modal').classList.add('open');
+}
+async function saveSettings() {
+  const apiBase = document.getElementById('settings-api-base').value.trim();
+  const apiKey = document.getElementById('settings-api-key').value.trim();
+  if (!apiBase || !apiKey) {
+    document.getElementById('settings-error').textContent = 'Renseignez l\'URL et la clé API.';
+    return;
+  }
+  storeConfig(apiBase, apiKey);
+  document.getElementById('settings-error').textContent = 'Vérification de la connexion…';
+  try {
+    await apiGet('all');
+    closeModal('settings-modal');
+    await init(true);
+    showToast('✓ Connecté à l\'API');
+  } catch (e) {
+    document.getElementById('settings-error').textContent = 'Connexion impossible : vérifiez l\'URL et la clé API.';
+  }
+}
+
+// ---------- API CALLS ----------
+async function apiGet(path) {
+  const res = await fetch(`${API_CONFIG.apiBase}/api/${path}`, {
+    headers: { 'X-API-Key': API_CONFIG.apiKey },
+  });
+  if (!res.ok) throw new Error('GET ' + path + ' failed: ' + res.status);
+  return res.json();
+}
+async function apiPut(path, data) {
+  const res = await fetch(`${API_CONFIG.apiBase}/api/${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_CONFIG.apiKey },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('PUT ' + path + ' failed: ' + res.status);
+  return res.json();
+}
+
+async function loadAll() {
+  try {
+    const all = await apiGet('all');
+    prospects = all.prospects || [];
+    templates = all.templates || [];
+    flows = all.flows || [];
+  } catch (e) {
+    prospects = []; templates = []; flows = [];
+    showToast('⚠️ Connexion à l\'API impossible');
+    throw e;
+  }
+}
+async function saveProspects() {
+  try { await apiPut('prospects', prospects); }
+  catch (e) { showToast('⚠️ Erreur de sauvegarde (prospects)'); }
+}
+async function saveTemplates() {
+  try { await apiPut('templates', templates); }
+  catch (e) { showToast('⚠️ Erreur de sauvegarde (templates)'); }
+}
+async function saveFlows() {
+  try { await apiPut('flows', flows); }
+  catch (e) { showToast('⚠️ Erreur de sauvegarde (flows)'); }
+}
+
+// ---------- TABS ----------
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector('.tab[data-tab="' + name + '"]').classList.add('active');
+  if (name === 'today') renderToday();
+}
+
+function updateCounts() {
+  document.getElementById('count-prospects').textContent = prospects.length;
+  document.getElementById('count-templates').textContent = templates.length;
+  document.getElementById('count-flows').textContent = flows.length;
+  document.getElementById('count-today').textContent = computeDueList().length;
+}
+
+// ---------- STATUS SELECT HELPERS ----------
+function statusLabel(id) {
+  const s = STATUSES.find(s => s.id === id);
+  return s ? s.label : id;
+}
+function statusColor(id) {
+  const s = STATUSES.find(s => s.id === id);
+  return s ? s.color : '#7c8499';
+}
+function populateStatusSelects() {
+  const filterSel = document.getElementById('prospect-filter-status');
+  const modalSel = document.getElementById('prospect-statut');
+  filterSel.innerHTML = '<option value="">Tous les statuts</option>' + STATUSES.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+  modalSel.innerHTML = STATUSES.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+}
+function populateFlowSelect() {
+  const sel = document.getElementById('prospect-flow');
+  sel.innerHTML = '<option value="">— Aucun —</option>' + flows.map(f => `<option value="${f.id}">${escapeHtml(f.nom)}</option>`).join('');
+}
+
+// ---------- PROSPECTS ----------
+function renderProspects() {
+  const wrap = document.getElementById('prospects-table-wrap');
+  const search = (document.getElementById('prospect-search').value || '').toLowerCase();
+  const filterStatus = document.getElementById('prospect-filter-status').value;
+
+  let list = prospects.filter(p => {
+    const matchesSearch = !search || (p.nom + ' ' + p.entreprise + ' ' + p.email).toLowerCase().includes(search);
+    const matchesStatus = !filterStatus || p.statut === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+  list = list.slice().sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  if (list.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big">🗂️</div>Aucun prospect${search||filterStatus ? ' ne correspond à ce filtre' : ' pour le moment'}.<br>Cliquez sur "+ Ajouter un prospect" pour commencer.</div>`;
+    updateCounts();
+    return;
+  }
+
+  let html = '<table><thead><tr><th>Nom</th><th>Entreprise</th><th>Contact</th><th>Statut</th><th>Flow</th><th>Actions</th></tr></thead><tbody>';
+  for (const p of list) {
+    const flow = flows.find(f => f.id === p.flowId);
+    html += `<tr>
+      <td><strong>${escapeHtml(p.nom)}</strong>${p.notes ? `<div class="helper">${escapeHtml(p.notes).slice(0,60)}${p.notes.length>60?'…':''}</div>` : ''}</td>
+      <td>${escapeHtml(p.entreprise)}</td>
+      <td>${p.email ? escapeHtml(p.email) : ''}${p.telephone ? '<br>'+escapeHtml(p.telephone) : ''}</td>
+      <td><span class="status-badge" style="background:${statusColor(p.statut)}22; color:${statusColor(p.statut)};">${statusLabel(p.statut)}</span></td>
+      <td>${flow ? escapeHtml(flow.nom) + `<div class="helper">depuis le ${p.flowStartDate || '—'}</div>` : '<span class="helper">—</span>'}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-sm" onclick="editProspect('${p.id}')">Modifier</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteProspect('${p.id}')">Suppr.</button>
+      </div></td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  updateCounts();
+}
+
+function openProspectModal() {
+  document.getElementById('prospect-modal-title').textContent = 'Ajouter un prospect';
+  document.getElementById('prospect-id').value = '';
+  document.getElementById('prospect-nom').value = '';
+  document.getElementById('prospect-entreprise').value = '';
+  document.getElementById('prospect-email').value = '';
+  document.getElementById('prospect-telephone').value = '';
+  document.getElementById('prospect-statut').value = 'a_contacter';
+  document.getElementById('prospect-flow').value = '';
+  document.getElementById('prospect-flow-date').value = todayISO();
+  document.getElementById('prospect-notes').value = '';
+  document.getElementById('prospect-modal').classList.add('open');
+}
+function editProspect(id) {
+  const p = prospects.find(p => p.id === id);
+  if (!p) return;
+  document.getElementById('prospect-modal-title').textContent = 'Modifier le prospect';
+  document.getElementById('prospect-id').value = p.id;
+  document.getElementById('prospect-nom').value = p.nom || '';
+  document.getElementById('prospect-entreprise').value = p.entreprise || '';
+  document.getElementById('prospect-email').value = p.email || '';
+  document.getElementById('prospect-telephone').value = p.telephone || '';
+  document.getElementById('prospect-statut').value = p.statut || 'a_contacter';
+  document.getElementById('prospect-flow').value = p.flowId || '';
+  document.getElementById('prospect-flow-date').value = p.flowStartDate || todayISO();
+  document.getElementById('prospect-notes').value = p.notes || '';
+  document.getElementById('prospect-modal').classList.add('open');
+}
+async function saveProspect() {
+  const nom = document.getElementById('prospect-nom').value.trim();
+  if (!nom) { showToast('⚠️ Le nom est requis'); return; }
+  const id = document.getElementById('prospect-id').value;
+  const flowId = document.getElementById('prospect-flow').value;
+  const data = {
+    nom,
+    entreprise: document.getElementById('prospect-entreprise').value.trim(),
+    email: document.getElementById('prospect-email').value.trim(),
+    telephone: document.getElementById('prospect-telephone').value.trim(),
+    statut: document.getElementById('prospect-statut').value,
+    flowId: flowId || null,
+    flowStartDate: document.getElementById('prospect-flow-date').value || todayISO(),
+    notes: document.getElementById('prospect-notes').value.trim(),
+  };
+  if (id) {
+    const existing = prospects.find(p => p.id === id);
+    // reset sent-steps tracking if the flow was changed
+    if (existing.flowId !== data.flowId) data.sentSteps = [];
+    else data.sentSteps = existing.sentSteps || [];
+    Object.assign(existing, data);
+  } else {
+    prospects.push({ id: uid(), ...data, sentSteps: [], createdAt: Date.now() });
+  }
+  await saveProspects();
+  closeModal('prospect-modal');
+  renderProspects();
+  showToast('✓ Prospect enregistré');
+}
+async function deleteProspect(id) {
+  if (!confirm('Supprimer ce prospect ?')) return;
+  prospects = prospects.filter(p => p.id !== id);
+  await saveProspects();
+  renderProspects();
+  showToast('✓ Prospect supprimé');
+}
+
+// ---------- TEMPLATES ----------
+function renderTemplates() {
+  const wrap = document.getElementById('templates-list');
+  if (templates.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big">✉️</div>Aucun template pour le moment.<br>Créez votre premier template de relance.</div>`;
+    updateCounts();
+    return;
+  }
+  let html = '';
+  for (const t of templates.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))) {
+    html += `<div class="tpl-card">
+      <div class="head">
+        <div><div class="name">${escapeHtml(t.nom)} ${t.isHtml ? '<span class="status-badge" style="background:var(--blue-dim); color:var(--blue);">HTML</span>' : ''}</div><div class="subject">Sujet : ${escapeHtml(t.sujet)}</div></div>
+        <div class="row-actions">
+          <button class="btn btn-sm" onclick="editTemplate('${t.id}')">Modifier</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${t.id}')">Suppr.</button>
+        </div>
+      </div>
+      ${t.isHtml
+        ? `<iframe style="width:100%; height:100px; border:1px solid var(--border); border-radius:6px; background:#fff;" sandbox="" srcdoc="${escapeHtml(t.corps)}"></iframe>`
+        : `<div class="body-preview">${escapeHtml(t.corps)}</div>`}
+    </div>`;
+  }
+  wrap.innerHTML = html;
+  updateCounts();
+}
+function toggleTemplateContentMode() {
+  const isHtml = document.getElementById('template-is-html').checked;
+  document.getElementById('template-corps-label').textContent = isHtml ? 'Code HTML de l\'email' : 'Corps de l\'email';
+  document.getElementById('template-preview-wrap').style.display = isHtml ? 'block' : 'none';
+  if (isHtml) refreshTemplatePreview();
+}
+function refreshTemplatePreview() {
+  const isHtml = document.getElementById('template-is-html').checked;
+  if (!isHtml) return;
+  const iframe = document.getElementById('template-html-preview');
+  iframe.srcdoc = document.getElementById('template-corps').value;
+}
+function openTemplateModal() {
+  document.getElementById('template-modal-title').textContent = 'Nouveau template';
+  document.getElementById('template-id').value = '';
+  document.getElementById('template-nom').value = '';
+  document.getElementById('template-sujet').value = '';
+  document.getElementById('template-corps').value = '';
+  document.getElementById('template-is-html').checked = false;
+  toggleTemplateContentMode();
+  document.getElementById('template-modal').classList.add('open');
+}
+function editTemplate(id) {
+  const t = templates.find(t => t.id === id);
+  if (!t) return;
+  document.getElementById('template-modal-title').textContent = 'Modifier le template';
+  document.getElementById('template-id').value = t.id;
+  document.getElementById('template-nom').value = t.nom;
+  document.getElementById('template-sujet').value = t.sujet;
+  document.getElementById('template-corps').value = t.corps;
+  document.getElementById('template-is-html').checked = !!t.isHtml;
+  toggleTemplateContentMode();
+  document.getElementById('template-modal').classList.add('open');
+}
+async function saveTemplate() {
+  const nom = document.getElementById('template-nom').value.trim();
+  const sujet = document.getElementById('template-sujet').value.trim();
+  const corps = document.getElementById('template-corps').value.trim();
+  const isHtml = document.getElementById('template-is-html').checked;
+  if (!nom || !sujet || !corps) { showToast('⚠️ Tous les champs sont requis'); return; }
+  const id = document.getElementById('template-id').value;
+  if (id) {
+    const existing = templates.find(t => t.id === id);
+    Object.assign(existing, { nom, sujet, corps, isHtml });
+  } else {
+    templates.push({ id: uid(), nom, sujet, corps, isHtml, createdAt: Date.now() });
+  }
+  await saveTemplates();
+  closeModal('template-modal');
+  renderTemplates();
+  populateFlowStepTemplateOptions();
+  showToast('✓ Template enregistré');
+}
+async function deleteTemplate(id) {
+  const usedIn = flows.filter(f => f.steps.some(s => s.templateId === id));
+  if (usedIn.length > 0) {
+    if (!confirm(`Ce template est utilisé dans ${usedIn.length} flow(s). Le supprimer quand même ? Les étapes concernées resteront mais sans template valide.`)) return;
+  } else if (!confirm('Supprimer ce template ?')) return;
+  templates = templates.filter(t => t.id !== id);
+  await saveTemplates();
+  renderTemplates();
+  showToast('✓ Template supprimé');
+}
+
+// ---------- FLOWS ----------
+function renderFlows() {
+  const wrap = document.getElementById('flows-list');
+  if (flows.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big">🔁</div>Aucun flow pour le moment.<br>Créez une séquence de relance (ex : J+0, J+3, J+7).</div>`;
+    updateCounts();
+    return;
+  }
+  let html = '';
+  for (const f of flows.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))) {
+    const steps = f.steps.slice().sort((a,b)=>a.jour-b.jour);
+    html += `<div class="flow-card">
+      <div class="head">
+        <div class="name">${escapeHtml(f.nom)}</div>
+        <div class="row-actions">
+          <button class="btn btn-sm" onclick="editFlow('${f.id}')">Modifier</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteFlow('${f.id}')">Suppr.</button>
+        </div>
+      </div>
+      <div class="flow-steps-mini">
+        ${steps.map(s => {
+          const t = templates.find(t => t.id === s.templateId);
+          return `<span class="mini-step"><b>J+${s.jour}</b> · ${t ? escapeHtml(t.nom) : '<em>template supprimé</em>'}</span>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  wrap.innerHTML = html;
+  updateCounts();
+}
+
+function renderFlowStepsEditor() {
+  const container = document.getElementById('flow-steps-container');
+  if (flowModalSteps.length === 0) {
+    container.innerHTML = `<div class="helper">Aucune étape. Ajoutez-en une ci-dessous.</div>`;
+    return;
+  }
+  container.innerHTML = flowModalSteps.map((step, idx) => `
+    <div class="flow-step">
+      <div class="day-badge">J+<input type="number" min="0" value="${step.jour}" style="width:36px; background:transparent; border:none; color:var(--blue); font-weight:700; font-size:12px; padding:0;" onchange="updateFlowStepDay(${idx}, this.value)"></div>
+      <select onchange="updateFlowStepTemplate(${idx}, this.value)">
+        <option value="">— Choisir un template —</option>
+        ${templates.map(t => `<option value="${t.id}" ${t.id===step.templateId?'selected':''}>${escapeHtml(t.nom)}</option>`).join('')}
+      </select>
+      <button class="remove-step" onclick="removeFlowStep(${idx})" title="Supprimer l'étape">✕</button>
+    </div>
+  `).join('');
+}
+function populateFlowStepTemplateOptions() { renderFlowStepsEditor(); }
+function addFlowStep() {
+  const lastDay = flowModalSteps.length ? flowModalSteps[flowModalSteps.length-1].jour : -3;
+  flowModalSteps.push({ jour: lastDay + 3, templateId: templates[0] ? templates[0].id : '' });
+  renderFlowStepsEditor();
+}
+function updateFlowStepDay(idx, val) { flowModalSteps[idx].jour = parseInt(val) || 0; }
+function updateFlowStepTemplate(idx, val) { flowModalSteps[idx].templateId = val; }
+function removeFlowStep(idx) { flowModalSteps.splice(idx, 1); renderFlowStepsEditor(); }
+
+function openFlowModal() {
+  if (templates.length === 0) { showToast('⚠️ Créez d\'abord au moins un template'); return; }
+  document.getElementById('flow-modal-title').textContent = 'Nouveau flow';
+  document.getElementById('flow-id').value = '';
+  document.getElementById('flow-nom').value = '';
+  flowModalSteps = [{ jour: 0, templateId: templates[0].id }];
+  renderFlowStepsEditor();
+  document.getElementById('flow-modal').classList.add('open');
+}
+function editFlow(id) {
+  const f = flows.find(f => f.id === id);
+  if (!f) return;
+  document.getElementById('flow-modal-title').textContent = 'Modifier le flow';
+  document.getElementById('flow-id').value = f.id;
+  document.getElementById('flow-nom').value = f.nom;
+  flowModalSteps = JSON.parse(JSON.stringify(f.steps));
+  renderFlowStepsEditor();
+  document.getElementById('flow-modal').classList.add('open');
+}
+async function saveFlow() {
+  const nom = document.getElementById('flow-nom').value.trim();
+  if (!nom) { showToast('⚠️ Le nom du flow est requis'); return; }
+  if (flowModalSteps.length === 0) { showToast('⚠️ Ajoutez au moins une étape'); return; }
+  if (flowModalSteps.some(s => !s.templateId)) { showToast('⚠️ Choisissez un template pour chaque étape'); return; }
+  const id = document.getElementById('flow-id').value;
+  const steps = flowModalSteps.map(s => ({ jour: s.jour, templateId: s.templateId }));
+  if (id) {
+    const existing = flows.find(f => f.id === id);
+    Object.assign(existing, { nom, steps });
+  } else {
+    flows.push({ id: uid(), nom, steps, createdAt: Date.now() });
+  }
+  await saveFlows();
+  closeModal('flow-modal');
+  renderFlows();
+  populateFlowSelect();
+  renderProspects();
+  showToast('✓ Flow enregistré');
+}
+async function deleteFlow(id) {
+  const usedBy = prospects.filter(p => p.flowId === id);
+  if (usedBy.length > 0 && !confirm(`${usedBy.length} prospect(s) utilisent ce flow. Le supprimer quand même ?`)) return;
+  else if (usedBy.length === 0 && !confirm('Supprimer ce flow ?')) return;
+  flows = flows.filter(f => f.id !== id);
+  for (const p of prospects) { if (p.flowId === id) { p.flowId = null; } }
+  await saveFlows();
+  await saveProspects();
+  renderFlows();
+  populateFlowSelect();
+  renderProspects();
+  showToast('✓ Flow supprimé');
+}
+
+// ---------- TODAY / DUE LIST ----------
+function fillTemplate(str, prospect) {
+  return (str || '')
+    .replace(/\{\{\s*nom\s*\}\}/gi, prospect.nom || '')
+    .replace(/\{\{\s*entreprise\s*\}\}/gi, prospect.entreprise || '');
+}
+function computeDueList() {
+  const today = todayISO();
+  const result = [];
+  const activeStatuses = ['a_contacter', 'contacte', 'interesse', 'injoignable'];
+  for (const p of prospects) {
+    if (!p.flowId) continue;
+    if (!activeStatuses.includes(p.statut)) continue; // stop sequence for rdv_fixe / pas_interesse
+    const flow = flows.find(f => f.id === p.flowId);
+    if (!flow) continue;
+    const startDate = p.flowStartDate || todayISO();
+    const elapsed = daysBetween(startDate, today);
+    const sentDays = (p.sentSteps || []).map(s => s.jour);
+    const sortedSteps = flow.steps.slice().sort((a,b)=>a.jour-b.jour);
+    for (const step of sortedSteps) {
+      if (sentDays.includes(step.jour)) continue;
+      if (elapsed >= step.jour) {
+        result.push({
+          prospect: p,
+          flow,
+          step,
+          overdue: elapsed > step.jour,
+          elapsed,
+        });
+        break; // only the next pending step per prospect
+      }
+    }
+  }
+  result.sort((a,b) => b.elapsed - a.elapsed);
+  return result;
+}
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✓ Copié dans le presse-papiers');
+  }).catch(() => {
+    showToast('⚠️ Impossible de copier automatiquement');
+  });
+}
+function copyRichEmail(subj, htmlBody, plainFallback) {
+  const plainAll = subj + '\n\n' + plainFallback;
+  if (navigator.clipboard && window.ClipboardItem) {
+    const htmlBlob = new Blob([htmlBody], { type: 'text/html' });
+    const textBlob = new Blob([plainAll], { type: 'text/plain' });
+    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })]).then(() => {
+      showToast('✓ Copié (mise en forme conservée) — collez dans votre email');
+    }).catch(() => copyToClipboard(plainAll));
+  } else {
+    copyToClipboard(plainAll);
+  }
+}
+async function markStepSent(prospectId, jour) {
+  const p = prospects.find(p => p.id === prospectId);
+  if (!p) return;
+  p.sentSteps = p.sentSteps || [];
+  p.sentSteps.push({ jour, date: todayISO() });
+  await saveProspects();
+  renderToday();
+  renderProspects();
+  showToast('✓ Marqué comme envoyé');
+}
+function renderToday() {
+  const wrap = document.getElementById('today-list');
+  const due = computeDueList();
+  updateCounts();
+  if (due.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big">✅</div>Rien à relancer aujourd'hui. Beau travail !</div>`;
+    return;
+  }
+  let html = '';
+  for (const d of due) {
+    const t = templates.find(t => t.id === d.step.templateId);
+    const subj = t ? fillTemplate(t.sujet, d.prospect) : '(template supprimé)';
+    const corps = t ? fillTemplate(t.corps, d.prospect) : '';
+    const isHtml = t && t.isHtml;
+    const cardId = 'due-' + d.prospect.id + '-' + d.step.jour;
+    html += `<div class="due-card ${d.overdue ? 'overdue' : ''}">
+      <div class="head">
+        <div>
+          <div class="prospect-name">${escapeHtml(d.prospect.nom)} — ${escapeHtml(d.prospect.entreprise)}</div>
+          <div class="meta">Étape J+${d.step.jour} · ${d.elapsed} jour(s) écoulé(s) depuis le démarrage du flow "${escapeHtml(d.flow.nom)}"${d.overdue ? ' · <span style="color:var(--danger)">en retard</span>' : ''}</div>
+        </div>
+        <div class="row-actions">
+          <button class="btn btn-sm" id="${cardId}-copybtn">📋 Copier</button>
+          <button class="btn btn-sm btn-primary" onclick="markStepSent('${d.prospect.id}', ${d.step.jour})">✓ Marquer envoyé</button>
+        </div>
+      </div>
+      <div class="email-preview">
+        <div class="subj">${escapeHtml(subj)}</div>
+        ${isHtml
+          ? `<iframe id="${cardId}-frame" style="width:100%; height:140px; border:1px solid var(--border); border-radius:6px; background:#fff; margin-top:6px;" sandbox="" srcdoc="${escapeHtml(corps)}"></iframe>`
+          : `<div class="corps">${escapeHtml(corps)}</div>`}
+      </div>
+    </div>`;
+  }
+  wrap.innerHTML = html;
+  // wire up copy buttons (avoids fragile inline-JSON-in-onclick for HTML content)
+  for (const d of due) {
+    const t = templates.find(t => t.id === d.step.templateId);
+    const subj = t ? fillTemplate(t.sujet, d.prospect) : '';
+    const corps = t ? fillTemplate(t.corps, d.prospect) : '';
+    const cardId = 'due-' + d.prospect.id + '-' + d.step.jour;
+    const btn = document.getElementById(cardId + '-copybtn');
+    if (!btn) continue;
+    if (t && t.isHtml) {
+      btn.onclick = () => copyRichEmail(subj, corps, corps.replace(/<[^>]+>/g, ' '));
+    } else {
+      btn.onclick = () => copyToClipboard(subj + '\n\n' + corps);
+    }
+  }
+}
+
+// ---------- MODAL HELPERS ----------
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ---------- INIT ----------
+async function init(skipConfigCheck) {
+  loadConfig();
+  if (!API_CONFIG) {
+    document.getElementById('loading-msg').textContent = 'Connectez-vous à votre API pour commencer.';
+    openSettingsModal();
+    return;
+  }
+  document.getElementById('loading-msg').style.display = 'block';
+  document.getElementById('loading-msg').textContent = 'Chargement des données…';
+  try {
+    await loadAll();
+  } catch (e) {
+    if (!skipConfigCheck) openSettingsModal();
+    return;
+  }
+  populateStatusSelects();
+  populateFlowSelect();
+  renderProspects();
+  renderTemplates();
+  renderFlows();
+  renderToday();
+  updateCounts();
+  document.getElementById('loading-msg').style.display = 'none';
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-prospects').classList.add('active');
+}
+init();
+</script>
+
+</body>
+</html>
