@@ -174,7 +174,10 @@
     <div class="card">
       <div class="card-title">
         <div class="left"><div class="icon">📋</div> Prospects</div>
-        <button class="btn btn-primary" onclick="openProspectModal()">+ Ajouter un prospect</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" onclick="openSendTemplateModal()">✉️ Envoyer un template</button>
+          <button class="btn btn-primary" onclick="openProspectModal()">+ Ajouter un prospect</button>
+        </div>
       </div>
       <div class="filter-bar">
         <input type="text" class="search-input" id="prospect-search" placeholder="Rechercher (nom, entreprise, email)…" oninput="renderProspects()">
@@ -297,6 +300,19 @@
   </div>
 </div>
 
+<!-- SEND TEMPLATE MODAL -->
+<div class="modal-overlay" id="send-template-modal">
+  <div class="modal" style="max-width:640px;">
+    <h3>Envoyer un template</h3>
+    <div class="sub">Choisissez un template pour chaque prospect sélectionné, puis envoyez.</div>
+    <div id="send-template-list" style="margin-top:6px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('send-template-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmSendTemplates()">✉️ Envoyer</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- SETTINGS MODAL -->
@@ -331,6 +347,7 @@ let templates = [];
 let flows = [];
 let flowModalSteps = []; // working state while editing a flow in modal
 let currentQueue = [];
+let selectedProspectIds = new Set();
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function todayISO() { return new Date().toISOString().slice(0,10); }
@@ -496,10 +513,11 @@ function renderProspects() {
     return;
   }
 
-  let html = '<table><thead><tr><th>Nom</th><th>Entreprise</th><th>Contact</th><th>Statut</th><th>Flow</th><th>Actions</th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="prospect-select-all" onchange="toggleSelectAllProspects()"></th><th>Nom</th><th>Entreprise</th><th>Contact</th><th>Statut</th><th>Flow</th><th>Actions</th></tr></thead><tbody>';
   for (const p of list) {
     const flow = flows.find(f => f.id === p.flowId);
     html += `<tr>
+      <td><input type="checkbox" class="prospect-checkbox" data-id="${p.id}" ${selectedProspectIds.has(p.id) ? 'checked' : ''} onchange="toggleProspectSelection('${p.id}', this.checked)"></td>
       <td><strong>${escapeHtml(p.nom)}</strong>${p.notes ? `<div class="helper">${escapeHtml(p.notes).slice(0,60)}${p.notes.length>60?'…':''}</div>` : ''}</td>
       <td>${escapeHtml(p.entreprise)}</td>
       <td>${p.email ? escapeHtml(p.email) : ''}${p.telephone ? '<br>'+escapeHtml(p.telephone) : ''}</td>
@@ -514,6 +532,58 @@ function renderProspects() {
   html += '</tbody></table>';
   wrap.innerHTML = html;
   updateCounts();
+}
+
+function toggleProspectSelection(id, checked) {
+  if (checked) selectedProspectIds.add(id);
+  else selectedProspectIds.delete(id);
+}
+function toggleSelectAllProspects() {
+  const checkAll = document.getElementById('prospect-select-all').checked;
+  document.querySelectorAll('.prospect-checkbox').forEach(cb => {
+    cb.checked = checkAll;
+    toggleProspectSelection(cb.dataset.id, checkAll);
+  });
+}
+
+// ---------- ENVOYER UN TEMPLATE (ponctuel, hors flow) ----------
+function openSendTemplateModal() {
+  const ids = Array.from(selectedProspectIds);
+  if (ids.length === 0) { showToast('⚠️ Sélectionnez au moins un prospect'); return; }
+  if (templates.length === 0) { showToast('⚠️ Créez d\'abord au moins un template'); return; }
+  const container = document.getElementById('send-template-list');
+  container.innerHTML = ids.map(id => {
+    const p = prospects.find(p => p.id === id);
+    if (!p) return '';
+    const options = '<option value="">— Choisir un template —</option>' + templates.map(t => `<option value="${t.id}">${escapeHtml(t.nom)}</option>`).join('');
+    return `<div class="flow-step" style="align-items:center;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:600; font-size:13px;">${escapeHtml(p.nom)}</div>
+        <div class="helper">${escapeHtml(p.entreprise)}${p.email ? ' · ' + escapeHtml(p.email) : ' · <span style="color:var(--danger)">email manquant</span>'}</div>
+      </div>
+      <select data-prospect-id="${p.id}" class="send-tpl-select" ${!p.email ? 'disabled' : ''} style="flex:1.4;">${options}</select>
+    </div>`;
+  }).join('');
+  document.getElementById('send-template-modal').classList.add('open');
+}
+async function confirmSendTemplates() {
+  const items = [];
+  document.querySelectorAll('.send-tpl-select').forEach(sel => {
+    if (sel.value) items.push({ prospectId: sel.dataset.prospectId, templateId: sel.value });
+  });
+  if (items.length === 0) { showToast('⚠️ Choisissez un template pour au moins un prospect'); return; }
+  showToast('Envoi en cours…');
+  try {
+    const res = await apiPost('send-template', { items });
+    const failed = (res.results || []).filter(r => !r.ok);
+    if (failed.length > 0) showToast(`⚠️ ${failed.length}/${items.length} envoi(s) ont échoué`);
+    else showToast(`✓ ${items.length} email(s) envoyé(s)`);
+  } catch (e) {
+    showToast('⚠️ Erreur lors de l\'envoi');
+  }
+  closeModal('send-template-modal');
+  selectedProspectIds.clear();
+  renderProspects();
 }
 
 function openProspectModal() {
